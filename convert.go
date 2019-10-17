@@ -47,8 +47,8 @@ var (
 	saveFolder      = flag.String("folder", "", "folder name to save")
 	targetDirectory = flag.String("dir", ".", "target directory to save")
 	count           = flag.Int("count", 1000, "total emails to save")
-	startDate       = flag.String("startdate", "", "start date of emails to save")
-	endDate         = flag.String("enddate", "", "end date of emails to save")
+	startDate       = flag.String("startdate", "", "start date of emails to save (e.g., 20060102)")
+	endDate         = flag.String("enddate", "", "end date of emails to save (e.g., 20060102)")
 )
 
 type Folder struct {
