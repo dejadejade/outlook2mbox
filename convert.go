@@ -72,15 +72,23 @@ func main() {
 	pMAPIInitialize.Call(uintptr(0))
 	runtime.LockOSThread()
 
+	// https://stackoverflow.com/questions/46557849/cocreateinstance-clsid-iconvertersession-fails-with-office-2016/57500982#57500982
+	if modjitv, err := syscall.LoadDLL("jitv.dll"); err == nil {
+		if pEnableFullVirtualization, err := modjitv.FindProc("EnableFullVirtualization"); err == nil {
+			log.Printf("Enable Registry Virtualization for Outlook 2016+")
+			pEnableFullVirtualization.Call()
+		}
+	}
+
 	converter, err := createConverterSession()
 	if err != nil {
-		log.Printf("createConverterSession: %v\n", err)
+		log.Printf("Failed to createConverterSession: %v. If you are using Outlook 2016+, copy JitV.DLL to this directory and retry.\n", err)
 		return
 	}
 
 	sess, err := createMAPISession()
 	if err != nil {
-		log.Printf("createMAPISession: %v\n", err)
+		log.Printf("Failed to createMAPISession: %v\n", err)
 		return
 	}
 
@@ -141,7 +149,7 @@ func main() {
 	var stm *IStream
 	hr, _, _ := pCreateStreamOnHGlobal.Call(uintptr(0), uintptr(0), uintptr(unsafe.Pointer(&stm)))
 	if hr != 0 {
-		log.Printf("CreateStreamOnHGlobal: %v\n", ole.NewError(hr))
+		log.Printf("Failed to CreateStreamOnHGlobal: %v\n", ole.NewError(hr))
 		return
 	}
 
@@ -172,7 +180,11 @@ func main() {
 		}
 	}
 
-	log.Printf("Folder %s: total %d items, from: %d, to: %d, count: %d\n", folder.Name, total, xstart, xend, *count)
+	actualCount := *count
+	if actualCount > int(total)-xstart {
+		actualCount = int(total) - xstart
+	}
+	log.Printf("Folder %s: total %d items, from: %d, to: %d, count: %d, actual: %d\n", folder.Name, total, xstart, xend, *count, actualCount)
 
 	saved := 0
 
